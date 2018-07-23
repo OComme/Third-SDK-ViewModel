@@ -20,8 +20,6 @@
 
 @implementation PublicGMSPaoPaoViewModel
 
-
-
 - (UIView *)mapView:(GMSMapView *)mapView markerInfoContents:(GMSMarker *)marker
 {
     if (marker.title.length == 0) {

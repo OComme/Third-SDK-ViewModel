@@ -34,7 +34,6 @@
     mapView.delegate = self;
     
     self.currentLocateMaker.map = mapView;
-    mapView.selectedMarker = self.currentLocateMaker;
     
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate  = self;
@@ -50,6 +49,9 @@
 #pragma mark-geoCode
 - (void)reverseGeocodeCoordinate:(CLLocationCoordinate2D)coordinate
 {
+    if (self.delegate == nil) {
+        return;
+    }
     [[GMSGeocoder geocoder]reverseGeocodeCoordinate:coordinate completionHandler:^(GMSReverseGeocodeResponse * response, NSError * error) {
         if (response.firstResult) {
             PublicGMSAddressDataModel *addressModel = [PublicGMSAddressDataModel new];
@@ -57,7 +59,11 @@
             addressModel.province = response.firstResult.administrativeArea;
             addressModel.city = response.firstResult.locality;
             addressModel.regin = response.firstResult.subLocality;
-            addressModel.needAddress = response.firstResult.lines.firstObject;
+            if (response.firstResult.lines.firstObject.length) {
+                addressModel.needAddress = response.firstResult.lines.firstObject;
+            }else if(response.firstResult.lines.count >= 2){
+                addressModel.needAddress = response.firstResult.lines[1];
+            }
             
             [self.delegate gms_outPutAddressInfo:addressModel];
         }
@@ -66,6 +72,9 @@
 
 - (void)geocodeAddressName:(NSString *)address APIKey:(NSString *)key
 {
+    if (self.delegate == nil) {
+        return;
+    }
     self.fetchModel_geoCode.parametDict = @{@"address":address,@"key":key};
     
     __weak typeof(self) weakSelf = self;
@@ -139,20 +148,21 @@
     return YES;
 }
 
-- (void)mapView:(GMSMapView *)mapView didChangeCameraPosition:(GMSCameraPosition *)position{
+- (void)mapView:(GMSMapView *)mapView idleAtCameraPosition:(GMSCameraPosition *)position
+{
     [[GMSGeocoder geocoder]reverseGeocodeCoordinate:position.target completionHandler:^(GMSReverseGeocodeResponse * response, NSError * error) {
         if (response.firstResult == nil) {
             return ;
         }
         self.currentLocateMaker.position = position.target;
+        if (response.firstResult.lines.firstObject.length) {
+            self.currentLocateMaker.title = response.firstResult.lines.firstObject;
+        }else if(response.firstResult.lines.count >= 2){
+            self.currentLocateMaker.title = response.firstResult.lines[1];
+        }
         
-        self.currentLocateMaker.title = response.firstResult.lines.firstObject;
         mapView.selectedMarker = self.currentLocateMaker;
     }];
-    
-//    [self reverseGeocodeCoordinate:position.target completionHandler:^(PublicGMSAddressDataModel * _Nullable addressModel) {
-//
-//    }];
 }
 
 #pragma mark-lazyload

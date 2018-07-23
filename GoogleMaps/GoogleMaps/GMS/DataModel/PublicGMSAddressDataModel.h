@@ -25,6 +25,8 @@
  */
 @property (nonnull,nonatomic,copy) NSString *needAddress;
 
+- (void)upDateForNewModel:(PublicGMSAddressDataModel *_Nonnull)newModel;
+
 - (BOOL)isIntact;
 
 @end
